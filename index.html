@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>$LOOK</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Space+Grotesk:wght@400;600&display=swap');
+
+    :root {
+      --accent: #14F195;
+      --bg: #0a0a0f;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      font-family: 'Space Grotesk', sans-serif;
+      min-height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .bg-photo {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      opacity: 0;
+      transition: opacity 0.8s ease;
+    }
+
+    .bg-photo.active { opacity: 1; }
+
+    /*
+    ══════════════════════════════════════
+     ФОНЫ ПОД КАЖДУЮ ЦЕНУ — меняй здесь
+    ══════════════════════════════════════
+    */
+    #bg-65  { background-image: url('bg-65.jpg');  }
+    #bg-85  { background-image: url('bg-85.jpg');  }
+    #bg-110 { background-image: url('bg-110.jpg'); }
+    #bg-140 { background-image: url('bg-140.jpg'); }
+    #bg-200 { background-image: url('bg-200.jpg'); }
+
+    .bg-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      transition: background 0.8s ease;
+    }
+
+    body.state-poor .bg-overlay { background: rgba(5,  5,  8,  0.72); }
+    body.state-mid  .bg-overlay { background: rgba(10, 10, 15, 0.65); }
+    body.state-rich .bg-overlay { background: rgba(20, 10, 0,  0.55); }
+
+    .bg-gradient {
+      position: fixed;
+      inset: 0;
+      z-index: 2;
+      opacity: 0;
+      transition: opacity 0.8s ease;
+      pointer-events: none;
+    }
+
+    body.state-poor .bg-gradient {
+      opacity: 1;
+      background: radial-gradient(ellipse 70% 50% at 50% 0%, rgba(80,80,90,0.25) 0%, transparent 70%);
+    }
+
+    body.state-mid .bg-gradient {
+      opacity: 1;
+      background:
+        radial-gradient(ellipse 80% 60% at 20% 10%, rgba(153,69,255,0.15) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 80% at 80% 90%, rgba(20,241,149,0.10) 0%, transparent 60%);
+    }
+
+    body.state-rich .bg-gradient {
+      opacity: 1;
+      background:
+        radial-gradient(ellipse 80% 60% at 30% 10%, rgba(255,180,0,0.20) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 70% at 75% 85%, rgba(255,120,0,0.12) 0%, transparent 60%);
+    }
+
+    .bg-scanlines {
+      position: fixed;
+      inset: 0;
+      z-index: 3;
+      background: repeating-linear-gradient(
+        0deg, transparent, transparent 2px,
+        rgba(0,0,0,0.06) 2px, rgba(0,0,0,0.06) 4px
+      );
+      pointer-events: none;
+    }
+
+    /* ─── HEADER ─── */
+    header {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: clamp(12px, 2vw, 22px) clamp(16px, 4vw, 36px);
+      flex-shrink: 0;
+    }
+
+    .ticker {
+      font-family: 'Orbitron', monospace;
+      font-size: clamp(1.2rem, 3vw, 2rem);
+      font-weight: 900;
+      color: var(--accent);
+      letter-spacing: 4px;
+      text-shadow: 0 0 20px rgba(20,241,149,0.6), 0 0 40px rgba(20,241,149,0.3);
+      animation: flicker 4s infinite;
+    }
+
+    @keyframes flicker {
+      0%,95%,100% { opacity: 1; }
+      96% { opacity: 0.7; }
+      97% { opacity: 1; }
+      98% { opacity: 0.5; }
+      99% { opacity: 1; }
+    }
+
+    .socials { display: flex; gap: clamp(8px, 1.5vw, 14px); align-items: center; }
+
+    .socials a {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: clamp(34px, 4vw, 42px);
+      height: clamp(34px, 4vw, 42px);
+      border-radius: 12px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      text-decoration: none;
+      color: #fff;
+      transition: all 0.2s;
+      backdrop-filter: blur(8px);
+    }
+
+    .socials a:hover {
+      background: rgba(20,241,149,0.15);
+      border-color: var(--accent);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 20px rgba(20,241,149,0.25);
+    }
+
+    .socials a svg {
+      width: clamp(14px, 1.8vw, 18px);
+      height: clamp(14px, 1.8vw, 18px);
+      fill: currentColor;
+    }
+
+    /* ─── MAIN ─── */
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      z-index: 10;
+      gap: clamp(10px, 1.8vh, 18px);
+      padding: 0 16px clamp(40px, 5vh, 56px);
+      overflow: hidden;
+    }
+
+    /* ─── PRICE BUTTONS ─── */
+    .price-selector {
+      display: flex;
+      align-items: center;
+      gap: clamp(5px, 0.8vw, 10px);
+      flex-shrink: 0;
+      flex-wrap: wrap;
+      justify-content: center;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 20px;
+      padding: clamp(6px, 1vh, 10px) clamp(10px, 1.5vw, 16px);
+      backdrop-filter: blur(10px);
+      max-width: 95vw;
+    }
+
+    .price-label {
+      font-size: clamp(0.6rem, 1.1vw, 0.7rem);
+      color: rgba(255,255,255,0.3);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .price-btn {
+      position: relative;
+      padding: clamp(8px, 1.2vh, 12px) clamp(14px, 1.8vw, 24px);
+      border-radius: 14px;
+      border: 2px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.7);
+      font-family: 'Orbitron', monospace;
+      font-size: clamp(0.75rem, 1.3vw, 0.98rem);
+      font-weight: 700;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: all 0.22s ease;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+
+    .price-btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.08), transparent);
+      opacity: 0;
+      transition: opacity 0.2s;
+      border-radius: 14px;
+    }
+
+    .price-btn:hover::before { opacity: 1; }
+
+    .price-btn:hover {
+      border-color: var(--accent);
+      color: #fff;
+      background: rgba(20,241,149,0.1);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px rgba(20,241,149,0.2);
+    }
+
+    .price-btn:active { transform: scale(0.95); }
+
+    .price-btn.active {
+      background: linear-gradient(135deg, rgba(20,241,149,0.2), rgba(153,69,255,0.2));
+      border-color: var(--accent);
+      color: #fff;
+      box-shadow:
+        0 0 0 1px rgba(20,241,149,0.3),
+        0 4px 20px rgba(20,241,149,0.25),
+        inset 0 1px 0 rgba(255,255,255,0.1);
+    }
+
+    .price-btn.active::after {
+      content: '';
+      position: absolute;
+      top: 6px;
+      right: 7px;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 8px var(--accent);
+      animation: dot-pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes dot-pulse {
+      0%,100% { opacity: 1; transform: scale(1); }
+      50%      { opacity: 0.4; transform: scale(0.6); }
+    }
+
+    /* ─── CHARACTER FRAME ─── */
+    .char-frame {
+      position: relative;
+      width: clamp(200px, 38vh, 420px);
+      height: clamp(200px, 38vh, 420px);
+      flex-shrink: 0;
+      animation: float 3.5s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%,100% { transform: translateY(0px); }
+      50%      { transform: translateY(-10px); }
+    }
+
+    .char-img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      border-radius: 16px;
+      position: absolute;
+      top: 0; left: 0;
+      opacity: 0;
+      transform: scale(0.92);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+      pointer-events: none;
+    }
+
+    .char-img.visible {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .corner {
+      position: absolute;
+      font-size: clamp(1.2rem, 2.5vw, 1.8rem);
+      transition: opacity 0.4s, transform 0.4s;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    .corner-tl { top: -10px;  left: -10px; }
+    .corner-tr { top: -10px;  right: -10px; }
+    .corner-bl { bottom: -10px; left: -10px; }
+    .corner-br { bottom: -10px; right: -10px; }
+
+    .rich-only { opacity: 0; transform: scale(0.5); }
+    .frame-rich .rich-only { opacity: 1; transform: scale(1); }
+
+    .poor-only { opacity: 0; transform: scale(0.5); }
+    .frame-poor .poor-only { opacity: 1; transform: scale(1); }
+
+    .money-rain {
+      position: absolute;
+      inset: -20px;
+      overflow: hidden;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.5s;
+      z-index: 6;
+    }
+
+    .frame-rich .money-rain { opacity: 1; }
+
+    .bill {
+      position: absolute;
+      font-size: clamp(0.9rem, 1.5vw, 1.3rem);
+      top: -20px;
+      animation: bill-fall 1.8s linear infinite;
+    }
+    .bill:nth-child(1){ left:15%; animation-delay:0s; }
+    .bill:nth-child(2){ left:42%; animation-delay:0.6s; }
+    .bill:nth-child(3){ left:70%; animation-delay:1.2s; }
+    .bill:nth-child(4){ left:28%; animation-delay:0.9s; }
+
+    @keyframes bill-fall {
+      0%   { transform: translateY(0) rotate(0deg); opacity:1; }
+      100% { transform: translateY(460px) rotate(200deg); opacity:0; }
+    }
+
+    .sweat-drops {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.5s;
+      z-index: 6;
+    }
+    .frame-poor .sweat-drops { opacity: 1; }
+
+    .drop {
+      position: absolute;
+      font-size: clamp(1rem, 2vw, 1.4rem);
+      animation: drip 2s ease-in-out infinite;
+    }
+    .drop:nth-child(1){ top: 10%; right: -22px; animation-delay: 0s; }
+    .drop:nth-child(2){ top: 35%; right: -26px; animation-delay: 0.7s; }
+    .drop:nth-child(3){ top: 10%; left: -22px;  animation-delay: 1.2s; }
+
+    @keyframes drip {
+      0%,100% { transform: translateY(0); }
+      50%      { transform: translateY(8px); }
+    }
+
+    /* ─── STATUS BADGE ─── */
+    .status-badge {
+      padding: clamp(6px, 1vh, 8px) clamp(16px, 2vw, 24px);
+      border-radius: 24px;
+      font-family: 'Orbitron', monospace;
+      font-size: clamp(0.65rem, 1.3vw, 0.82rem);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      border: 1.5px solid;
+      transition: all 0.5s;
+      flex-shrink: 0;
+    }
+
+    .badge-rich { background: rgba(255,215,0,0.12); border-color: #ffd700; color: #ffd700; box-shadow: 0 0 20px rgba(255,215,0,0.2); }
+    .badge-mid  { background: rgba(153,69,255,0.12); border-color: #9945FF; color: #c084fc; }
+    .badge-poor { background: rgba(80,80,80,0.08);   border-color: #444;    color: #666; }
+
+    /* ─── SOL DISPLAY ─── */
+    .sol-display {
+      font-family: 'Orbitron', monospace;
+      font-size: clamp(0.6rem, 1.2vw, 0.72rem);
+      color: rgba(255,255,255,0.3);
+      letter-spacing: 2px;
+      flex-shrink: 0;
+    }
+    .sol-display .price-val { transition: color 0.5s; }
+    .sol-rich  { color: #ffd700 !important; }
+    .sol-mid   { color: #9945FF !important; }
+    .sol-poor  { color: #555    !important; }
+
+    /* ─── CA ─── */
+    .ca-wrap {
+      display: flex;
+      align-items: center;
+      gap: clamp(8px, 1.2vw, 10px);
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: clamp(8px, 1.2vh, 10px) clamp(12px, 1.8vw, 18px);
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+      backdrop-filter: blur(8px);
+      max-width: 90vw;
+      flex-shrink: 0;
+    }
+    .ca-wrap:hover { border-color: rgba(20,241,149,0.3); background: rgba(20,241,149,0.05); }
+    .ca-label { font-size: clamp(0.55rem, 1vw, 0.65rem); color: rgba(255,255,255,0.3); letter-spacing: 2px; text-transform: uppercase; }
+    .ca-text  {
+      font-family: 'Orbitron', monospace;
+      font-size: clamp(0.6rem, 1.1vw, 0.72rem);
+      color: rgba(255,255,255,0.55);
+      letter-spacing: 1px;
+      word-break: break-all;
+    }
+    .ca-icon  { font-size: 0.9rem; color: rgba(255,255,255,0.25); transition: color 0.2s; flex-shrink: 0; }
+    .ca-wrap:hover .ca-icon { color: var(--accent); }
+
+    .copied-toast {
+      position: absolute;
+      top: -36px; left: 50%;
+      transform: translateX(-50%);
+      background: var(--accent);
+      color: #000;
+      font-size: 0.7rem; font-weight: 700;
+      padding: 5px 14px;
+      border-radius: 8px;
+      letter-spacing: 1px;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.2s;
+      white-space: nowrap;
+    }
+    .copied-toast.show { opacity: 1; }
+
+    /* ─── BUY BUTTON ─── */
+    .buy-btn {
+      padding: clamp(11px, 1.8vh, 14px) clamp(32px, 5vw, 52px);
+      border-radius: 16px;
+      border: none;
+      font-family: 'Orbitron', monospace;
+      font-size: clamp(0.8rem, 1.8vw, 1rem);
+      font-weight: 700;
+      letter-spacing: 3px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.15s, box-shadow 0.2s;
+      background: linear-gradient(135deg, #14F195, #9945FF);
+      color: #000;
+      flex-shrink: 0;
+    }
+    .buy-btn::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.2), transparent);
+      opacity: 0; transition: opacity 0.2s;
+    }
+    .buy-btn:hover::before { opacity: 1; }
+    .buy-btn:hover { transform: translateY(-3px) scale(1.03); box-shadow: 0 8px 40px rgba(20,241,149,0.35), 0 4px 20px rgba(153,69,255,0.25); }
+    .buy-btn:active { transform: scale(0.97); }
+    .buy-btn::after {
+      content: '';
+      position: absolute; inset: -4px;
+      border-radius: 20px;
+      border: 2px solid rgba(20,241,149,0.4);
+      animation: pulse-ring 2s ease-out infinite;
+    }
+    @keyframes pulse-ring {
+      0%   { transform: scale(1);    opacity: 0.6; }
+      100% { transform: scale(1.12); opacity: 0; }
+    }
+
+    /* ─── PARTICLES ─── */
+    .particles { position: fixed; inset: 0; pointer-events: none; z-index: 4; }
+    .particle {
+      position: absolute; width: 2px; height: 2px; border-radius: 50%;
+      opacity: 0; animation: particle-float linear infinite;
+    }
+    @keyframes particle-float {
+      0%   { transform: translateY(100vh) rotate(0deg);   opacity: 0; }
+      10%  { opacity: 0.6; }
+      90%  { opacity: 0.3; }
+      100% { transform: translateY(-10vh) rotate(720deg); opacity: 0; }
+    }
+
+    /* ─── TICKER TAPE ─── */
+    .ticker-tape {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 10;
+      background: rgba(10,10,15,0.85);
+      border-top: 1px solid rgba(255,255,255,0.06);
+      padding: 8px 0; overflow: hidden;
+      backdrop-filter: blur(8px);
+    }
+    .tape-inner { display: flex; gap: 60px; white-space: nowrap; animation: scroll-tape 20s linear infinite; }
+    @keyframes scroll-tape { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+    .tape-item { font-family: 'Orbitron', monospace; font-size: clamp(0.55rem, 1vw, 0.65rem); color: rgba(255,255,255,0.3); letter-spacing: 2px; }
+    .tape-item .green  { color: var(--accent); }
+    .tape-item .purple { color: #9945FF; }
+
+    /* ─── MEDIA QUERIES ─── */
+    @media (max-width: 480px) {
+      .price-btn { padding: 7px 11px; font-size: 0.72rem; letter-spacing: 0; }
+      .price-selector { gap: 5px; padding: 6px 8px; }
+      .price-label { display: none; }
+    }
+
+    @media (max-width: 380px) {
+      .char-frame { width: min(75vw, 240px); height: min(75vw, 240px); }
+      .ca-text { font-size: 0.55rem; }
+    }
+
+    @media (max-width: 600px) {
+      body { overflow-y: auto; }
+      main { gap: 12px; padding-bottom: 50px; justify-content: flex-start; padding-top: 8px; }
+      .char-frame { width: min(72vw, 300px); height: min(72vw, 300px); }
+    }
+
+    @media (min-width: 600px) and (max-width: 1024px) {
+      .char-frame { width: clamp(280px, 44vw, 380px); height: clamp(280px, 44vw, 380px); }
+    }
+
+    @media (min-width: 1400px) {
+      .char-frame { width: clamp(380px, 32vw, 480px); height: clamp(380px, 32vw, 480px); }
+    }
+
+    @media (min-height: 900px) and (min-width: 1024px) {
+      .char-frame { width: clamp(360px, 42vh, 460px); height: clamp(360px, 42vh, 460px); }
+    }
+  </style>
+</head>
+<body class="state-mid">
+
+<!-- ─── ФОНОВЫЕ СЛОИ (по 1 на каждую цену) ─── -->
+<div class="bg-photo" id="bg-65"></div>
+<div class="bg-photo" id="bg-85"></div>
+<div class="bg-photo" id="bg-110"></div>
+<div class="bg-photo" id="bg-140"></div>
+<div class="bg-photo" id="bg-200"></div>
+<div class="bg-overlay"></div>
+<div class="bg-gradient"></div>
+<div class="bg-scanlines"></div>
+
+<div class="particles" id="particles"></div>
+
+<header>
+  <div class="ticker">$LOOK</div>
+  <div class="socials">
+    <a href="#" title="X (Twitter)">
+      <svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.253 5.622 5.91-5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+    </a>
+    <a href="#" title="Telegram">
+      <svg viewBox="0 0 24 24"><path d="M11.944 0A12 12 0 1 0 24 12 12 12 0 0 0 11.944 0zm5.988 8.218-2.01 9.47c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.873.75z"/></svg>
+    </a>
+    <a href="#" title="DexScreener">
+      <svg viewBox="0 0 24 24"><path d="M3 3h18v2H3V3zm0 4h18v2H3V7zm0 4h12v2H3v-2zm0 4h18v2H3v-2zm0 4h12v2H3v-2z"/></svg>
+    </a>
+  </div>
+</header>
+
+<main>
+
+  <div class="price-selector">
+    <span class="price-label">SOL $</span>
+    <button class="price-btn" onclick="manualSetPrice(65)">$65</button>
+    <button class="price-btn" onclick="manualSetPrice(85)">$85</button>
+    <button class="price-btn active" onclick="manualSetPrice(110)">$110</button>
+    <button class="price-btn" onclick="manualSetPrice(140)">$140</button>
+    <button class="price-btn" onclick="manualSetPrice(200)">$200</button>
+  </div>
+
+  <div class="char-frame" id="charFrame">
+    <!--
+    ══════════════════════════════════════
+     ГИФКИ ПОД КАЖДУЮ ЦЕНУ — меняй src
+     Поддерживаются: gif, png, jpg, webp
+    ══════════════════════════════════════
+    -->
+    <img class="char-img" id="img-65"  src="char-65.gif"  alt="$65"  />
+    <img class="char-img" id="img-85"  src="char-85.gif"  alt="$85"  />
+    <img class="char-img" id="img-110" src="char-110.gif" alt="$110" />
+    <img class="char-img" id="img-140" src="char-140.gif" alt="$140" />
+    <img class="char-img" id="img-200" src="char-200.gif" alt="$200" />
+
+    <div class="money-rain">
+      <span class="bill">💵</span>
+      <span class="bill">💸</span>
+      <span class="bill">💵</span>
+      <span class="bill">💸</span>
+    </div>
+
+    <div class="sweat-drops">
+      <span class="drop">💧</span>
+      <span class="drop">💧</span>
+      <span class="drop">💧</span>
+    </div>
+
+    <div class="corner corner-tl rich-only">🎩</div>
+    <div class="corner corner-tr rich-only">💎</div>
+    <div class="corner corner-bl rich-only">💰</div>
+    <div class="corner corner-br rich-only">👑</div>
+
+    <div class="corner corner-tl poor-only">😢</div>
+    <div class="corner corner-tr poor-only">📉</div>
+    <div class="corner corner-bl poor-only">🪙</div>
+    <div class="corner corner-br poor-only">💸</div>
+  </div>
+
+  <div class="status-badge badge-mid" id="statusBadge">👀 WATCHING</div>
+
+  <div class="sol-display">SOL / USD &nbsp; <span class="price-val sol-mid" id="solPrice">$110</span></div>
+
+  <div class="ca-wrap" onclick="copyCA()">
+    <div>
+      <div class="ca-label">Contract Address</div>
+      <div class="ca-text">LOOKxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</div>
+    </div>
+    <div class="ca-icon">⧉</div>
+    <div class="copied-toast" id="toast">COPIED ✓</div>
+  </div>
+
+  <button class="buy-btn" onclick="window.open('#','_blank')">BUY $LOOK</button>
+
+</main>
+
+<div class="ticker-tape">
+  <div class="tape-inner" id="tape"></div>
+</div>
+
+<script>
+  // ══════════════════════════════════════
+  //  НАСТРОЙКИ — меняй здесь
+  // ══════════════════════════════════════
+  const CA      = 'LOOKxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'; // ← вставь реальный CA
+  const RICH_AT = 150; // выше — богатый
+  const POOR_AT = 80;  // ниже — бедный
+
+  const BADGES = {
+    rich: '💰 LOADED',
+    mid:  '👀 WATCHING',
+    poor: '😰 COPING'
+  };
+
+  const prices = [65, 85, 110, 140, 200];
+  let autoIndex = prices.indexOf(110);
+  let autoTimer = null;
+  // ══════════════════════════════════════
+
+  let currentState = null;
+
+  function getState(p) {
+    if (p >= RICH_AT) return 'rich';
+    if (p <= POOR_AT) return 'poor';
+    return 'mid';
+  }
+
+  function setPrice(price) {
+    document.querySelectorAll('.price-btn').forEach(b => {
+      const val = parseInt(b.textContent.replace('$', ''));
+      b.classList.toggle('active', val === price);
+    });
+
+    const state   = getState(price);
+    const frame   = document.getElementById('charFrame');
+    const badge   = document.getElementById('statusBadge');
+    const priceEl = document.getElementById('solPrice');
+
+    // ── Анимации рамки ──
+    frame.classList.remove('frame-rich', 'frame-mid', 'frame-poor');
+    frame.classList.add('frame-' + state);
+
+    // ── Гифка под конкретную цену ──
+    prices.forEach(p => {
+      const el = document.getElementById('img-' + p);
+      if (el) el.classList.toggle('visible', p === price);
+    });
+
+    // ── Фон под конкретную цену ──
+    prices.forEach(p => {
+      const el = document.getElementById('bg-' + p);
+      if (el) el.classList.toggle('active', p === price);
+    });
+
+    // ── Body state (оверлей + градиент) ──
+    document.body.classList.remove('state-rich', 'state-mid', 'state-poor');
+    document.body.classList.add('state-' + state);
+
+    // ── Badge и цена ──
+    badge.classList.remove('badge-rich', 'badge-mid', 'badge-poor');
+    badge.classList.add('badge-' + state);
+    priceEl.classList.remove('sol-rich', 'sol-mid', 'sol-poor');
+    priceEl.classList.add('sol-' + state);
+
+    badge.textContent   = BADGES[state];
+    priceEl.textContent = '$' + price;
+    currentState        = state;
+  }
+
+  // Ручной клик — сбрасывает таймер
+  function manualSetPrice(price) {
+    autoIndex = prices.indexOf(price);
+    setPrice(price);
+    resetAutoTimer();
+  }
+
+  function resetAutoTimer() {
+    if (autoTimer) clearInterval(autoTimer);
+    autoTimer = setInterval(() => {
+      autoIndex = (autoIndex + 1) % prices.length;
+      setPrice(prices[autoIndex]);
+    }, 7000);
+  }
+
+  function copyCA() {
+    navigator.clipboard.writeText(CA).catch(() => {});
+    const t = document.getElementById('toast');
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 1800);
+  }
+
+  // Частицы
+  const pc = document.getElementById('particles');
+  for (let i = 0; i < 30; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.style.cssText = `
+      left:${Math.random()*100}vw;
+      width:${Math.random()*3+1}px;height:${Math.random()*3+1}px;
+      animation-duration:${Math.random()*15+10}s;
+      animation-delay:${Math.random()*10}s;
+      background:${Math.random()>.5?'#14F195':'#9945FF'};
+    `;
+    pc.appendChild(p);
+  }
+
+  // Бегущая строка
+  const items = [
+    '<span class="green">$LOOK</span> 👁 THE MARKET IS WATCHING',
+    '<span class="purple">SOL</span> ECOSYSTEM',
+    'LOOK · LOOK · LOOK · LOOK',
+    '👁 EYES ON THE PRIZE',
+    '<span class="green">BUY $LOOK</span> · STAY RICH',
+    'THE RICHER SOL · THE RICHER YOU LOOK',
+  ];
+  const tape = document.getElementById('tape');
+  [...items, ...items].forEach(txt => {
+    const el = document.createElement('div');
+    el.className = 'tape-item';
+    el.innerHTML = txt;
+    tape.appendChild(el);
+  });
+
+  // Старт
+  setPrice(110);
+  resetAutoTimer();
+</script>
+</body>
+</html>
